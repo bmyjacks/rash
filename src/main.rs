@@ -1,12 +1,28 @@
+use colored::Colorize;
+use hostname;
+use std::env;
 use std::io::{self, Write};
 use std::process::{Command, Stdio};
-use std::env;
+
+fn prompt() {
+    let user_name = env::var("USER").unwrap().green();
+    let user_hostname = hostname::get().unwrap().to_str().unwrap().to_owned();
+    let home_dir = env::var("HOME").unwrap();
+    let current_dir = env::current_dir().unwrap();
+    let display_dir = current_dir.display().to_string().replace(&home_dir, "~");
+    print!(
+        "{}@{} {}{}",
+        user_name,
+        user_hostname,
+        display_dir,
+        ">".green()
+    );
+    io::stdout().flush().unwrap();
+}
 
 fn main() {
     loop {
-        // Display the prompt
-        print!("rust-shell> ");
-        io::stdout().flush().unwrap();
+        prompt();
 
         // Read the input
         let mut input = String::new();
@@ -30,7 +46,7 @@ fn main() {
             let args = parts.collect::<Vec<&str>>();
 
             // Execute the command
-            let mut child = Command::new(command)
+            let child = Command::new(command)
                 .args(&args)
                 .stdin(Stdio::inherit())
                 .stdout(Stdio::inherit())
@@ -38,7 +54,9 @@ fn main() {
                 .spawn();
 
             match child {
-                Ok(mut child) => { child.wait().unwrap(); },
+                Ok(mut child) => {
+                    child.wait().unwrap();
+                }
                 Err(err) => eprintln!("Error executing command: {}", err),
             }
         }
